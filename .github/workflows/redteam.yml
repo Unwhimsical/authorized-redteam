@@ -1,17 +1,30 @@
-name: authorized-redteam-selfcheck
+name: iOS Manifest Sync
 
 on:
+  schedule:
+    - cron: '0 2 * * *'
   workflow_dispatch:
-    inputs:
-      confirm:
-        description: '输入 I_AM_AUTHORIZED 确认你有权测试该目标'
-        required: true
-        default: 'I_AM_AUTHORIZED'
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: manifest-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_MANIFEST: "http://app.ioskuka.com/appstore/manifest.plist"
+  PAGES_BASE_URL: "https://<username>.github.io/<repo>"
+  REWRITE_MODE: "proxy"
+  PROXY_BASE_URL: "https://ipa-proxy.example.com"
+  VERIFY_LINKS: "true"
 
 jobs:
-  run:
+  sync:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -19,21 +32,26 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install deps
-        run: pip install requests
+      - run: pip install requests
 
-      - name: Run authorized self-check
+      - name: Run manifest sync
         env:
-          TARGET_BASE_URL: ${{ secrets.TARGET_BASE_URL }}
-          ALLOWED_HOST: ${{ secrets.ALLOWED_HOST }}
-          CONFIRM: ${{ github.event.inputs.confirm }}
-        run: python redteam_selfcheck.py
+          UPSTREAM_MANIFEST: ${{ env.UPSTREAM_MANIFEST }}
+          PAGES_BASE_URL: ${{ env.PAGES_BASE_URL }}
+          REWRITE_MODE: ${{ env.REWRITE_MODE }}
+          PROXY_BASE_URL: ${{ env.PROXY_BASE_URL }}
+          VERIFY_LINKS: ${{ env.VERIFY_LINKS }}
+        run: python sync.py
 
-      - name: Upload report
-        if: always()
-        uses: actions/upload-artifact@v4
+      - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          name: redteam-report
-          path: |
-            report.md
-            raw_*.txt
+          commit_message: "chore(sync): refresh manifest.plist [skip ci]"
+          commit_user_name: "manifest-sync-bot"
+          commit_user_email: "manifest-sync-bot@users.noreply.github.com"
+          file_pattern: "manifest.plist apps.json"
+
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - uses: actions/deploy-pages@v4
