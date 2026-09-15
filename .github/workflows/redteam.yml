@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 concurrency:
   group: manifest-sync
@@ -49,9 +47,3 @@ jobs:
           commit_user_name: "manifest-sync-bot"
           commit_user_email: "manifest-sync-bot@users.noreply.github.com"
           file_pattern: "manifest.plist apps.json"
-
-      - uses: actions/configure-pages@v4
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: '.'
-      - uses: actions/deploy-pages@v4
