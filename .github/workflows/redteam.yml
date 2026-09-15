@@ -1,0 +1,37 @@
+name: authorized-redteam-selfcheck
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: '输入 I_AM_AUTHORIZED 确认你有权测试该目标'
+        required: true
+        default: 'NO'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Run authorized self-check
+        env:
+          TARGET_BASE_URL: ${{ secrets.TARGET_BASE_URL }}
+          ALLOWED_HOST: ${{ secrets.ALLOWED_HOST }}
+          CONFIRM: ${{ github.event.inputs.confirm }}
+        run: python redteam_selfcheck.py
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: redteam-report
+          path: report.md
