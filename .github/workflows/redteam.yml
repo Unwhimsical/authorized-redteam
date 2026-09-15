@@ -14,10 +14,11 @@ concurrency:
 
 env:
   UPSTREAM_MANIFEST: "http://app.ioskuka.com/appstore/manifest.plist"
-  PAGES_BASE_URL: "https://<username>.github.io/<repo>"
+  PAGES_BASE_URL: "https://unwhimsical.github.io/authorized-redteam"
   REWRITE_MODE: "proxy"
-  PROXY_BASE_URL: "https://ipa-proxy.example.com"
-  VERIFY_LINKS: "true"
+  PROXY_BASE_URL: "https://ipa-proxy.YOUR-SUBDOMAIN.workers.dev"
+  VERIFY_LINKS: "false"
+  SOURCE_NAME: "内部 iOS 源"
 
 jobs:
   sync:
@@ -35,15 +36,16 @@ jobs:
       - name: Run manifest sync
         env:
           UPSTREAM_MANIFEST: ${{ env.UPSTREAM_MANIFEST }}
-          PAGES_BASE_URL: ${{ env.PAGES_BASE_URL }}
-          REWRITE_MODE: ${{ env.REWRITE_MODE }}
-          PROXY_BASE_URL: ${{ env.PROXY_BASE_URL }}
-          VERIFY_LINKS: ${{ env.VERIFY_LINKS }}
+          PAGES_BASE_URL:    ${{ env.PAGES_BASE_URL }}
+          REWRITE_MODE:      ${{ env.REWRITE_MODE }}
+          PROXY_BASE_URL:    ${{ env.PROXY_BASE_URL }}
+          VERIFY_LINKS:      ${{ env.VERIFY_LINKS }}
+          SOURCE_NAME:       ${{ env.SOURCE_NAME }}
         run: python sync.py
 
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(sync): refresh manifest.plist [skip ci]"
+          commit_message: "chore(sync): refresh source [skip ci]"
           commit_user_name: "manifest-sync-bot"
           commit_user_email: "manifest-sync-bot@users.noreply.github.com"
-          file_pattern: "manifest.plist apps.json"
+          file_pattern: "apps.json manifest.plist"
